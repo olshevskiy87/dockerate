@@ -27,8 +27,8 @@ type argsType struct {
 	All     bool   `arg:"--all,-a" help:"show all containers"`
 	NoTrunc bool   `arg:"--no-trunc" help:"don't truncate output"`
 	Quiet   bool   `arg:"--quiet,-q" help:"only display containers IDs"`
-	APIVer  string `arg:"env:DOCKER_API_VER" help:"docker server API version, env DOCKER_API_VER"`
 	Verbose bool   `arg:"--verbose,-v" help:"output more information"`
+	APIVer  string `arg:"env:DOCKER_API_VER" help:"docker server API version, env DOCKER_API_VER"`
 	//Size    bool   `arg:"--size,-s" help:"display containers sizes"`
 }
 
