@@ -5,10 +5,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
+
+	"github.com/olshevskiy87/dockerate/colorer"
 
 	"github.com/alexflint/go-arg"
 	"github.com/docker/docker/api/types"
@@ -21,6 +24,7 @@ const (
 	DockerAPIVersionDefault  = "1.40"
 	ContainerIDMinWidth      = 12
 	ContainerCommandMinWidth = 20
+	ColumnPadding            = 5
 )
 
 type argsType struct {
@@ -73,14 +77,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	buffer := &bytes.Buffer{}
+	tabBuffer := &bytes.Buffer{}
 
-	const ColumnPadding = 5
-	w := tabwriter.NewWriter(buffer, 0, 0, ColumnPadding, ' ', tabwriter.FilterHTML)
+	w := tabwriter.NewWriter(tabBuffer, 0, 0, ColumnPadding, ' ', tabwriter.FilterHTML)
 
 	if !args.Quiet {
-		header := "CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES"
-		_, err = w.Write([]byte(fmt.Sprintf("<fg 12>%s<reset>\n", header)))
+		_, err = colorer.Fpaintf(w, colorer.ColorLightBlue, "CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES\n")
 		if err != nil {
 			fmt.Printf("could not write columns header to output buffer: %v\n", err)
 			os.Exit(1)
@@ -89,13 +91,19 @@ func main() {
 
 	for _, container := range containers {
 
+		var containerLine strings.Builder
+
+		// 1. container ID
 		containerID := container.ID
 		if !args.NoTrunc {
 			containerID = containerID[:ContainerIDMinWidth]
 		}
 
+		containerLine.WriteString(colorer.Paint(colorer.ColorDarkGray, containerID))
+
 		if args.Quiet {
-			_, err = w.Write([]byte(fmt.Sprintf("%s\n", containerID)))
+			containerLine.WriteString("\n")
+			_, err = w.Write([]byte(containerLine.String()))
 			if err != nil {
 				fmt.Printf("could not write container info to output buffer: %v\n", err)
 				os.Exit(1)
@@ -103,43 +111,71 @@ func main() {
 			continue
 		}
 
-		var ports strings.Builder
-		for _, port := range container.Ports {
-			if port.PrivatePort != 0 {
-				ports.WriteString(strconv.Itoa(int(port.PrivatePort)))
-			}
-			if port.Type != "" {
-				ports.WriteString("/")
-				ports.WriteString(port.Type)
-			}
+		// 2. image
+		var image strings.Builder
+		imageItems := strings.Split(container.Image, ":")
+		if len(imageItems) > 0 {
+			image.WriteString(colorer.Paint(colorer.ColorLightYellow, imageItems[0]))
 		}
-
-		names := make([]string, len(container.Names))
-		for i, name := range container.Names {
-			names[i] = strings.TrimLeft(name, "/")
+		if len(imageItems) > 1 {
+			image.WriteString(colorer.Paintf(colorer.ColorLightGreen, ":%s", imageItems[1]))
 		}
+		containerLine.WriteString(fmt.Sprintf("\t%s", image.String()))
 
-		created := time.Unix(container.Created, 0)
-
+		// 3. command
 		command := container.Command
 		if !args.NoTrunc && len(command) > ContainerCommandMinWidth {
 			command = fmt.Sprintf("%s…", container.Command[:ContainerCommandMinWidth])
 		}
+		containerLine.WriteString(colorer.Paintf(colorer.ColorDarkGray, "\t\"%s\"", command))
 
-		_, err = w.Write(
-			[]byte(
-				fmt.Sprintf(
-					"%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-					containerID,
-					container.Image,
-					fmt.Sprintf("\"%s\"", command),
-					humanize.Time(created),
-					container.Status,
-					ports.String(),
-					strings.Join(names, ", "),
-				),
-			),
-		)
+		// 4. created
+		created := humanize.Time(time.Unix(container.Created, 0))
+		containerLine.WriteString(colorer.Paintf(colorer.ColorGreen, "\t%s", created))
+
+		// 5. status
+		containerLine.WriteString(colorer.Paintf(colorer.ColorLightGreen, "\t%s", container.Status))
+
+		// 6. ports
+		ports := make([]string, len(container.Ports))
+		for i, portInfo := range container.Ports {
+			var hostIPPublicPort strings.Builder
+
+			// IP
+			if portInfo.IP != "" {
+				hostIPPublicPort.WriteString(portInfo.IP)
+			}
+			// PublicPort
+			if portInfo.PublicPort != 0 {
+				if hostIPPublicPort.Len() > 0 {
+					hostIPPublicPort.WriteString(":")
+				}
+				hostIPPublicPort.WriteString(strconv.Itoa(int(portInfo.PublicPort)))
+			}
+
+			var portLine strings.Builder
+			if hostIPPublicPort.Len() > 0 {
+				portLine.WriteString(colorer.Paintf(colorer.ColorLightCyan, "%s->", hostIPPublicPort.String()))
+			}
+
+			// PrivatePort and Type (required)
+			portLine.WriteString(fmt.Sprintf("%s/%s", strconv.Itoa(int(portInfo.PrivatePort)), portInfo.Type))
+
+			ports[i] = portLine.String()
+		}
+		sort.Strings(ports)
+		containerLine.WriteString(fmt.Sprintf("\t%s", strings.Join(ports, ", ")))
+
+		// 7. names
+		names := make([]string, len(container.Names))
+		for i, name := range container.Names {
+			names[i] = strings.TrimLeft(name, "/")
+		}
+		containerLine.WriteString(colorer.Paintf(colorer.ColorWhite, "\t%s", strings.Join(names, ", ")))
+
+		// complete result string with container info
+		containerLine.WriteString("\n")
+		_, err = w.Write([]byte(containerLine.String()))
 		if err != nil {
 			fmt.Printf("could not write container info to output buffer: %v\n", err)
 			os.Exit(1)
@@ -150,7 +186,7 @@ func main() {
 	loreley.DelimLeft = "<"
 	loreley.DelimRight = ">"
 
-	output, err := loreley.CompileAndExecuteToString(buffer.String(), nil, nil)
+	output, err := loreley.CompileAndExecuteToString(tabBuffer.String(), nil, nil)
 	if err != nil {
 		fmt.Printf("could not compile result output string: %v\n", err)
 		os.Exit(1)
