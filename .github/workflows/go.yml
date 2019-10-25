@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Get dependencies
-      run: make dep
+      run: make deps
 
     - name: Run linters
       run: make lint
