@@ -32,8 +32,8 @@ type argsType struct {
 	NoTrunc bool   `arg:"--no-trunc" help:"don't truncate output"`
 	Quiet   bool   `arg:"--quiet,-q" help:"only display containers IDs"`
 	Verbose bool   `arg:"--verbose,-v" help:"output more information"`
+	Size    bool   `arg:"--size,-s" help:"display containers sizes"`
 	APIVer  string `arg:"env:DOCKER_API_VER" help:"docker server API version, env DOCKER_API_VER"`
-	//Size    bool   `arg:"--size,-s" help:"display containers sizes"`
 }
 
 func (argsType) Description() string {
@@ -68,8 +68,8 @@ func main() {
 	containers, err := cli.ContainerList(
 		context.Background(),
 		types.ContainerListOptions{
-			All: args.All,
-			//Size:  args.Size,
+			All:  args.All,
+			Size: args.Size,
 		},
 	)
 	if err != nil {
@@ -82,7 +82,13 @@ func main() {
 	w := tabwriter.NewWriter(tabBuffer, 0, 0, ColumnPadding, ' ', tabwriter.FilterHTML)
 
 	if !args.Quiet {
-		_, err = colorer.Fpaintf(w, colorer.ColorLightBlue, "CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES\n")
+		var header strings.Builder
+		header.WriteString("CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES")
+		if args.Size {
+			header.WriteString("\tSIZE")
+		}
+		header.WriteString("\n")
+		_, err = colorer.Fpaintf(w, colorer.ColorLightBlue, header.String())
 		if err != nil {
 			fmt.Printf("could not write columns header to output buffer: %v\n", err)
 			os.Exit(1)
@@ -172,6 +178,15 @@ func main() {
 			names[i] = strings.TrimLeft(name, "/")
 		}
 		containerLine.WriteString(colorer.Paintf(colorer.ColorWhite, "\t%s", strings.Join(names, ", ")))
+
+		// 8. size
+		if args.Size {
+			containerLine.WriteString(fmt.Sprintf(
+				"\t%s (virtual %s)",
+				humanize.Bytes(uint64(container.SizeRw)),
+				humanize.Bytes(uint64(container.SizeRootFs)),
+			))
+		}
 
 		// complete result string with container info
 		containerLine.WriteString("\n")
