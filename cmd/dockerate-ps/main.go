@@ -33,7 +33,7 @@ type argsType struct {
 	Quiet   bool   `arg:"--quiet,-q" help:"only display containers IDs"`
 	Verbose bool   `arg:"--verbose,-v" help:"output more information"`
 	Size    bool   `arg:"--size,-s" help:"display containers sizes"`
-	APIVer  string `arg:"env:DOCKER_API_VER" help:"docker server API version, env DOCKER_API_VER"`
+	APIVer  string `arg:"env:DOCKER_API_VERSION" help:"docker server API version, env DOCKER_API_VERSION"`
 }
 
 func (argsType) Description() string {
