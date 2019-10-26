@@ -12,16 +12,15 @@ import (
 	"time"
 
 	"github.com/olshevskiy87/dockerate/colorer"
+	"github.com/olshevskiy87/dockerate/docker"
 
 	"github.com/alexflint/go-arg"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/reconquest/loreley"
 )
 
 const (
-	DockerAPIVersionDefault  = "1.40"
 	ContainerIDMinWidth      = 12
 	ContainerCommandMinWidth = 20
 	ColumnPadding            = 5
@@ -40,7 +39,7 @@ func (argsType) Description() string {
 	return "Dockerate (decorate docker commands output): List containers"
 }
 
-var version = "0.1.1"
+var version = "0.1.3"
 
 func (argsType) Version() string {
 	return fmt.Sprintf("dockerate-ps %s", version)
@@ -49,20 +48,15 @@ func (argsType) Version() string {
 func main() {
 
 	var args argsType
-	// TODO:
-	// - detect docker server API version using command "docker version --format {{.Server.APIVersion}}"
-	// - ask if user wants to set system environment variable to this version if it wasn't set yet
-	args.APIVer = DockerAPIVersionDefault
 	arg.MustParse(&args)
 
-	if args.Verbose {
-		fmt.Printf("docker server API version: %s\n", args.APIVer)
-	}
-
-	cli, err := client.NewClientWithOpts(client.WithVersion(args.APIVer))
+	cli, err := docker.GetClient(args.APIVer)
 	if err != nil {
 		fmt.Printf("could not init docker client: %v\n", err)
 		os.Exit(1)
+	}
+	if args.Verbose {
+		fmt.Printf("docker client API version: %s\n", cli.ClientVersion())
 	}
 
 	containers, err := cli.ContainerList(
