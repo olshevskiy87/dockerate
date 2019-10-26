@@ -176,9 +176,16 @@ func main() {
 		// 8. size
 		if args.Size {
 			containerLine.WriteString(fmt.Sprintf(
-				"\t%s (virtual %s)",
-				humanize.Bytes(uint64(container.SizeRw)),
-				humanize.Bytes(uint64(container.SizeRootFs)),
+				"\t%s (%s)",
+				colorer.Paint(
+					docker.GetContainerSizeColor(container.SizeRw),
+					humanize.Bytes(uint64(container.SizeRw)),
+				),
+				colorer.Paintf(
+					docker.GetContainerSizeColor(container.SizeRootFs),
+					"virtual %s",
+					humanize.Bytes(uint64(container.SizeRootFs)),
+				),
 			))
 		}
 
