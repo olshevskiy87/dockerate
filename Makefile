@@ -4,11 +4,11 @@ GO=$(shell which go)
 .DEFAULT_GOAL := build
 
 deps:
-	@$(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint
+	@curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
 	@$(GO) get ./...
 
 lint:
-	@golangci-lint run --tests=false --enable-all -D wsl ./...
+	@golangci-lint run
 
 build:
 	@echo building dockerate-ps...
