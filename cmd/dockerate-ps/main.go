@@ -21,9 +21,10 @@ import (
 )
 
 const (
-	ContainerIDMinWidth      = 12
-	ContainerCommandMinWidth = 20
-	ColumnPadding            = 5
+	ContainerIDMinWidth       = 12
+	ContainerImageTagMinWidth = 12
+	ContainerCommandMinWidth  = 20
+	ColumnPadding             = 5
 )
 
 type argsType struct {
@@ -116,7 +117,13 @@ func main() {
 			image.WriteString(colorer.Paint(colorer.ColorLightYellow, imageItems[0]))
 		}
 		if len(imageItems) > 1 {
-			image.WriteString(colorer.Paintf(colorer.ColorLightGreen, ":%s", imageItems[1]))
+			var imageTag string
+			if args.NoTrunc || len(imageTag) <= ContainerImageTagMinWidth {
+				imageTag = imageItems[1]
+			} else {
+				imageTag = fmt.Sprintf("%s…", imageTag[:ContainerImageTagMinWidth])
+			}
+			image.WriteString(colorer.Paintf(colorer.ColorLightGreen, ":%s", imageTag))
 		}
 		containerLine.WriteString(fmt.Sprintf("\t%s", image.String()))
 
