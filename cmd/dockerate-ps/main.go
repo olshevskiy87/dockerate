@@ -46,7 +46,6 @@ func (argsType) Version() string {
 }
 
 func main() {
-
 	var args argsType
 	arg.MustParse(&args)
 
@@ -90,7 +89,6 @@ func main() {
 	}
 
 	for _, container := range containers {
-
 		var containerLine strings.Builder
 
 		// 1. container ID
