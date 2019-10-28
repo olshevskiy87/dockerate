@@ -13,6 +13,7 @@ import (
 
 	"github.com/olshevskiy87/dockerate/colorer"
 	"github.com/olshevskiy87/dockerate/docker"
+	"github.com/olshevskiy87/dockerate/unit"
 
 	"github.com/alexflint/go-arg"
 	"github.com/docker/docker/api/types"
@@ -133,11 +134,22 @@ func main() {
 		containerLine.WriteString(colorer.Paintf(colorer.ColorDarkGray, "\t\"%s\"", command))
 
 		// 4. created
+		createdInterval := time.Now().Unix() - container.Created
+		createdColor := colorer.ColorLightGreen
+		if createdInterval > unit.IntervalMonthSec {
+			createdColor = colorer.ColorRed
+		} else if createdInterval > unit.IntervalWeekSec {
+			createdColor = colorer.ColorYellow
+		}
 		created := humanize.Time(time.Unix(container.Created, 0))
-		containerLine.WriteString(colorer.Paintf(colorer.ColorGreen, "\t%s", created))
+		containerLine.WriteString(colorer.Paintf(createdColor, "\t%s", created))
 
 		// 5. status
-		containerLine.WriteString(colorer.Paintf(colorer.ColorLightGreen, "\t%s", container.Status))
+		statusColor := colorer.ColorDefault
+		if strings.HasPrefix(container.Status, "Up") {
+			statusColor = colorer.ColorLightGreen
+		}
+		containerLine.WriteString(colorer.Paintf(statusColor, "\t%s", container.Status))
 
 		// 6. ports
 		ports := make([]string, len(container.Ports))

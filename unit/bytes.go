@@ -1,5 +1,6 @@
-package docker
+package unit
 
+// decimal byte sizes
 const (
 	Kilobyte = 1000
 	Megabyte = 1000 * Kilobyte
