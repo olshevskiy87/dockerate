@@ -40,7 +40,7 @@ func (argsType) Description() string {
 	return "Dockerate (decorate docker commands output): List containers"
 }
 
-var version = "0.1.3"
+var version = "0.1.4"
 
 func (argsType) Version() string {
 	return fmt.Sprintf("dockerate-ps %s", version)
@@ -117,10 +117,8 @@ func main() {
 			image.WriteString(colorer.Paint(colorer.ColorLightYellow, imageItems[0]))
 		}
 		if len(imageItems) > 1 {
-			var imageTag string
-			if args.NoTrunc || len(imageTag) <= ContainerImageTagMinWidth {
-				imageTag = imageItems[1]
-			} else {
+			imageTag := imageItems[1]
+			if !args.NoTrunc && len(imageTag) > ContainerImageTagMinWidth {
 				imageTag = fmt.Sprintf("%s…", imageTag[:ContainerImageTagMinWidth])
 			}
 			image.WriteString(colorer.Paintf(colorer.ColorLightGreen, ":%s", imageTag))
