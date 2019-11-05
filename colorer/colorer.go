@@ -28,7 +28,7 @@ const (
 )
 
 func Paint(code ColorCode, str string) string {
-	if code == -1 {
+	if code == ColorDefault {
 		return fmt.Sprintf("<nofg>%s<reset>", str)
 	}
 	return fmt.Sprintf("<fg %d>%s<reset>", code, str)
