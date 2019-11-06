@@ -82,7 +82,6 @@ func main() {
 	list.SetOptionSize(args.Size)
 	list.SetOptionQuiet(args.Quiet)
 	list.SetOptionNoTrunc(args.NoTrunc)
-
 	list.SetColorize(shouldBeColorized(args.WhenColor))
 
 	output, err := list.CompileOutput(cli)
