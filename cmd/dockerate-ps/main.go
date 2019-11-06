@@ -44,7 +44,7 @@ func shouldBeColorized(mode string) bool {
 	if mode == "auto" {
 		stdoutInfo, err := os.Stdout.Stat()
 		if err != nil {
-			fmt.Printf("could not display containers: %v\n", err)
+			fmt.Printf("could not get stdout info: %v\n", err)
 			os.Exit(1)
 		}
 		// disable colors when piping
