@@ -15,6 +15,27 @@ import (
 	humanize "github.com/dustin/go-humanize"
 )
 
+func (l *List) fPrintHeader(w io.Writer) error {
+	if l.OptQuiet {
+		return nil
+	}
+	var header strings.Builder
+	header.WriteString("CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES")
+	if l.OptSize {
+		header.WriteString("\tSIZE")
+	}
+	header.WriteString("\n")
+	var color = colorer.NoColor
+	if l.Colorized {
+		color = colorer.ColorLightBlue
+	}
+	_, err := colorer.Fpaintf(w, color, header.String())
+	if err != nil {
+		return fmt.Errorf("could not write header columns to output buffer: %v", err)
+	}
+	return nil
+}
+
 func (l *List) fPrintContainer(w io.Writer, container types.Container) error {
 	if err := l.fPrintID(w, container.ID); err != nil {
 		return fmt.Errorf("could not display container's field \"ID\": %v", err)
@@ -59,10 +80,11 @@ func (l *List) fPrintID(w io.Writer, id string) error {
 	if !l.OptNoTrunc {
 		idOutput = id[:IDMinWidth]
 	}
-	_, err := w.Write([]byte(colorer.Paint(
-		colorer.ColorDarkGray,
-		idOutput,
-	)))
+	var color = colorer.NoColor
+	if l.Colorized {
+		color = colorer.ColorDarkGray
+	}
+	_, err := w.Write([]byte(colorer.Paint(color, idOutput)))
 	return err
 }
 
@@ -70,21 +92,22 @@ func (l *List) fPrintImage(w io.Writer, image string) error {
 	var outputImage strings.Builder
 	imageItems := strings.Split(image, ":")
 	if len(imageItems) > 0 {
-		outputImage.WriteString(colorer.Paint(
-			colorer.ColorLightYellow,
-			imageItems[0],
-		))
+		var color = colorer.NoColor
+		if l.Colorized {
+			color = colorer.ColorLightYellow
+		}
+		outputImage.WriteString(colorer.Paint(color, imageItems[0]))
 	}
 	if len(imageItems) > 1 {
 		imageTag := imageItems[1]
 		if !l.OptNoTrunc && len(imageTag) > ImageTagMinWidth {
 			imageTag = fmt.Sprintf("%s…", imageTag[:ImageTagMinWidth])
 		}
-		outputImage.WriteString(colorer.Paintf(
-			colorer.ColorLightGreen,
-			":%s",
-			imageTag,
-		))
+		var color = colorer.NoColor
+		if l.Colorized {
+			color = colorer.ColorLightGreen
+		}
+		outputImage.WriteString(colorer.Paintf(color, ":%s", imageTag))
 	}
 	_, err := w.Write([]byte(fmt.Sprintf(
 		"\t%s",
@@ -98,21 +121,26 @@ func (l *List) fPrintCommand(w io.Writer, command string) error {
 	if !l.OptNoTrunc && len(command) > CommandMinWidth {
 		commandOutput = fmt.Sprintf("%s…", command[:CommandMinWidth])
 	}
-	_, err := w.Write([]byte(colorer.Paintf(
-		colorer.ColorDarkGray,
-		"\t\"%s\"",
-		commandOutput,
-	)))
+	var color = colorer.NoColor
+	if l.Colorized {
+		color = colorer.ColorDarkGray
+	}
+	_, err := w.Write([]byte(colorer.Paintf(color, "\t\"%s\"", commandOutput)))
 	return err
 }
 
 func (l *List) fPrintCreated(w io.Writer, created int64) error {
 	createdInterval := time.Now().Unix() - created
-	createdColor := colorer.ColorLightGreen
-	if createdInterval > unit.IntervalMonthSec {
-		createdColor = colorer.ColorRed
-	} else if createdInterval > unit.IntervalWeekSec {
-		createdColor = colorer.ColorYellow
+	var createdColor = colorer.NoColor
+	if l.Colorized {
+		switch {
+		case createdInterval > unit.IntervalMonthSec:
+			createdColor = colorer.ColorRed
+		case createdInterval > unit.IntervalWeekSec:
+			createdColor = colorer.ColorYellow
+		default:
+			createdColor = colorer.ColorLightGreen
+		}
 	}
 	_, err := w.Write([]byte(colorer.Paintf(
 		createdColor,
@@ -123,9 +151,13 @@ func (l *List) fPrintCreated(w io.Writer, created int64) error {
 }
 
 func (l *List) fPrintStatus(w io.Writer, status string) error {
-	statusColor := colorer.ColorDefault
-	if strings.HasPrefix(status, "Up") {
-		statusColor = colorer.ColorLightGreen
+	var statusColor = colorer.NoColor
+	if l.Colorized {
+		if strings.HasPrefix(status, "Up") {
+			statusColor = colorer.ColorLightGreen
+		} else {
+			statusColor = colorer.ColorDefault
+		}
 	}
 	_, err := w.Write([]byte(colorer.Paintf(statusColor, "\t%s", status)))
 	return err
@@ -150,8 +182,12 @@ func (l *List) fPrintPorts(w io.Writer, ports []types.Port) error {
 
 		var portLine strings.Builder
 		if hostIPPublicPort.Len() > 0 {
+			var color = colorer.NoColor
+			if l.Colorized {
+				color = colorer.ColorLightCyan
+			}
 			portLine.WriteString(colorer.Paintf(
-				colorer.ColorLightCyan,
+				color,
 				"%s->",
 				hostIPPublicPort.String(),
 			))
@@ -179,8 +215,12 @@ func (l *List) fPrintNames(w io.Writer, names []string) error {
 	for i, name := range names {
 		namesOutput[i] = strings.TrimLeft(name, "/")
 	}
+	var color = colorer.NoColor
+	if l.Colorized {
+		color = colorer.ColorDefault
+	}
 	_, err := w.Write([]byte(colorer.Paintf(
-		colorer.ColorWhite,
+		color,
 		"\t%s",
 		strings.Join(namesOutput, ", "),
 	)))
@@ -188,17 +228,34 @@ func (l *List) fPrintNames(w io.Writer, names []string) error {
 }
 
 func (l *List) fPrintSize(w io.Writer, sizeRw int64, sizeRootFs int64) error {
+	var (
+		colorSizeRw     = colorer.NoColor
+		colorSizeRootFs = colorer.NoColor
+	)
+	if l.Colorized {
+		colorSizeRw = l.getSizeColor(sizeRw)
+		colorSizeRootFs = l.getSizeColor(sizeRw)
+	}
 	_, err := w.Write([]byte(fmt.Sprintf(
 		"\t%s (%s)",
 		colorer.Paint(
-			l.getSizeColor(sizeRw),
+			colorSizeRw,
 			humanize.Bytes(uint64(sizeRw)),
 		),
 		colorer.Paintf(
-			l.getSizeColor(sizeRootFs),
+			colorSizeRootFs,
 			"virtual %s",
 			humanize.Bytes(uint64(sizeRootFs)),
 		),
 	)))
 	return err
+}
+
+func (l *List) getSizeColor(size int64) colorer.ColorCode {
+	if size >= 0 && size < 500*unit.Megabyte {
+		return colorer.ColorDefault
+	} else if size >= 500*unit.Megabyte && size < unit.Gigabyte {
+		return colorer.ColorYellow
+	}
+	return colorer.ColorRed
 }

@@ -8,6 +8,7 @@ import (
 type ColorCode int8
 
 const (
+	NoColor           ColorCode = -2
 	ColorDefault      ColorCode = -1
 	ColorBlack        ColorCode = 0
 	ColorRed          ColorCode = 1
@@ -28,7 +29,9 @@ const (
 )
 
 func Paint(code ColorCode, str string) string {
-	if code == ColorDefault {
+	if code == NoColor {
+		return str
+	} else if code == ColorDefault {
 		return fmt.Sprintf("<nofg>%s<reset>", str)
 	}
 	return fmt.Sprintf("<fg %d>%s<reset>", code, str)
