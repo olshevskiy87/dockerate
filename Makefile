@@ -1,4 +1,5 @@
 GO=$(shell which go)
+GOBIN=$(shell $(GO) env GOBIN)
 BINPATH=$(CURDIR)/bin
 
 PLATFORMS := darwin/386 darwin/amd64 linux/386 linux/amd64 freebsd/386
@@ -13,7 +14,7 @@ CMDPATH=cmd/dockerate-ps/*.go
 .DEFAULT_GOAL := build
 
 deps:
-	@curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
+	@curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.21.0
 	@$(GO) get ./...
 
 lint:
