@@ -1,5 +1,7 @@
 # Dockerate
 
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+
 Decorate docker commands output.
 
 ## Installation
@@ -40,3 +42,8 @@ Options:
 ## Motivation
 
 Package [docker-color-output](https://github.com/devemio/docker-color-output) written in PHP by [Sergey Sorokin](https://github.com/devemio).
+
+
+## License
+
+MIT. See file LICENSE for details.
