@@ -1,6 +1,6 @@
 # Dockerate
 
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+[![MIT license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://lbesson.mit-license.org/) ![GitHub release](https://img.shields.io/github/v/tag/olshevskiy87/dockerate?label=release)
 
 Decorate docker commands output.
 
