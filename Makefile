@@ -1,6 +1,15 @@
 GO=$(shell which go)
+BINPATH=$(CURDIR)/bin
 
-.PHONY: deps lint build
+PLATFORMS := darwin/386 darwin/amd64 linux/386 linux/amd64 freebsd/386
+PLATFORM = $(subst /, ,$@)
+OS = $(word 1, $(PLATFORM))
+ARCH = $(word 2, $(PLATFORM))
+
+BINNAME=dockerate-ps
+CMDPATH=cmd/dockerate-ps/*.go
+
+.PHONY: deps lint build build_all
 .DEFAULT_GOAL := build
 
 deps:
@@ -11,5 +20,11 @@ lint:
 	@golangci-lint run
 
 build:
-	@echo building dockerate-ps...
-	@$(GO) build -o bin/dockerate-ps cmd/dockerate-ps/main.go
+	@echo building $(BINNAME)...
+	@$(GO) build -o $(BINPATH)/$(BINNAME) -ldflags="-w -s" $(CMDPATH)
+
+$(PLATFORMS):
+	@echo building $(BINNAME) for $(OS)/$(ARCH)...
+	@GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -o $(BINPATH)/$(BINNAME)_$(OS)_$(ARCH) $(CMDPATH)
+
+build_all: $(PLATFORMS)
