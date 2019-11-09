@@ -15,6 +15,11 @@ import (
 	humanize "github.com/dustin/go-humanize"
 )
 
+type portsStrings struct {
+	display string
+	sort    string
+}
+
 func (l *List) fPrintHeader(w io.Writer) error {
 	if l.OptQuiet {
 		return nil
@@ -89,8 +94,10 @@ func (l *List) fPrintID(w io.Writer, id string) error {
 }
 
 func (l *List) fPrintImage(w io.Writer, image string) error {
-	var outputImage strings.Builder
-	imageItems := strings.Split(image, ":")
+	var (
+		outputImage strings.Builder
+		imageItems  = strings.Split(image, ":")
+	)
 	if len(imageItems) > 0 {
 		var color = colorer.NoColor
 		if l.Colorized {
@@ -99,7 +106,7 @@ func (l *List) fPrintImage(w io.Writer, image string) error {
 		outputImage.WriteString(colorer.Paint(color, imageItems[0]))
 	}
 	if len(imageItems) > 1 {
-		imageTag := imageItems[1]
+		var imageTag = imageItems[1]
 		if !l.OptNoTrunc && len(imageTag) > ImageTagMinWidth {
 			imageTag = fmt.Sprintf("%s…", imageTag[:ImageTagMinWidth])
 		}
@@ -130,7 +137,7 @@ func (l *List) fPrintCommand(w io.Writer, command string) error {
 }
 
 func (l *List) fPrintCreated(w io.Writer, created int64) error {
-	createdInterval := time.Now().Unix() - created
+	var createdInterval = time.Now().Unix() - created
 	var createdColor = colorer.NoColor
 	if l.Colorized {
 		switch {
@@ -164,7 +171,28 @@ func (l *List) fPrintStatus(w io.Writer, status string) error {
 }
 
 func (l *List) fPrintPorts(w io.Writer, ports []types.Port) error {
-	portsOutput := make([]string, len(ports))
+	var portsItems = l.makePortsItems(ports)
+	sort.Slice(
+		portsItems,
+		func(i, j int) bool {
+			return portsItems[i].sort < portsItems[j].sort
+		},
+	)
+
+	var portsOutput = make([]string, len(portsItems))
+	for i, p := range portsItems {
+		portsOutput[i] = p.display
+	}
+
+	_, err := w.Write([]byte(fmt.Sprintf(
+		"\t%s",
+		strings.Join(portsOutput, ", "),
+	)))
+	return err
+}
+
+func (l *List) makePortsItems(ports []types.Port) []portsStrings {
+	var items = make([]portsStrings, len(ports))
 	for i, portInfo := range ports {
 		var hostIPPublicPort strings.Builder
 
@@ -180,38 +208,36 @@ func (l *List) fPrintPorts(w io.Writer, ports []types.Port) error {
 			hostIPPublicPort.WriteString(strconv.Itoa(int(portInfo.PublicPort)))
 		}
 
-		var portLine strings.Builder
+		var portLine, portLineSort strings.Builder
 		if hostIPPublicPort.Len() > 0 {
 			var color = colorer.NoColor
 			if l.Colorized {
 				color = colorer.ColorLightCyan
 			}
-			portLine.WriteString(colorer.Paintf(
-				color,
+			var hostIPPublicPortStr = fmt.Sprintf(
 				"%s->",
 				hostIPPublicPort.String(),
-			))
+			)
+			portLine.WriteString(colorer.Paint(color, hostIPPublicPortStr))
+			portLineSort.WriteString(hostIPPublicPortStr)
 		}
 
 		// PrivatePort and Type (required)
-		portLine.WriteString(fmt.Sprintf(
+		var privatePortStr = fmt.Sprintf(
 			"%s/%s",
 			strconv.Itoa(int(portInfo.PrivatePort)),
 			portInfo.Type,
-		))
+		)
+		portLine.WriteString(privatePortStr)
+		portLineSort.WriteString(privatePortStr)
 
-		portsOutput[i] = portLine.String()
+		items[i] = portsStrings{display: portLine.String(), sort: portLineSort.String()}
 	}
-	sort.Strings(portsOutput)
-	_, err := w.Write([]byte(fmt.Sprintf(
-		"\t%s",
-		strings.Join(portsOutput, ", "),
-	)))
-	return err
+	return items
 }
 
 func (l *List) fPrintNames(w io.Writer, names []string) error {
-	namesOutput := make([]string, len(names))
+	var namesOutput = make([]string, len(names))
 	for i, name := range names {
 		namesOutput[i] = strings.TrimLeft(name, "/")
 	}
