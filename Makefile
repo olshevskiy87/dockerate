@@ -10,7 +10,7 @@ ARCH = $(word 2, $(PLATFORM))
 BINNAME=dockerate-ps
 CMDPATH=cmd/dockerate-ps/*.go
 
-.PHONY: deps lint build build_all clean
+.PHONY: deps_lint deps lint build build_all clean
 .DEFAULT_GOAL := build
 
 deps_lint:

@@ -5,7 +5,7 @@ go:
     - "1.13"
 
 before_script:
-    - make deps_lint
+    - make deps
 
 script:
     - make lint
