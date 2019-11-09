@@ -24,7 +24,7 @@ func (argsType) Description() string {
 	return "Dockerate (decorate docker commands output): List containers"
 }
 
-var version = "0.1.6"
+var version = "0.1.7"
 
 func (argsType) Version() string {
 	return fmt.Sprintf("dockerate-ps %s", version)
