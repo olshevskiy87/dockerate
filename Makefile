@@ -28,7 +28,7 @@ build:
 
 $(PLATFORMS):
 	@echo building $(BINNAME) for $(OS)/$(ARCH)...
-	@GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -o $(BINPATH)/$(BINNAME)_$(OS)_$(ARCH) $(CMDPATH)
+	@GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -o $(BINPATH)/$(BINNAME)_$(OS)_$(ARCH) -ldflags="-w -s" $(CMDPATH)
 
 build_all: $(PLATFORMS)
 
