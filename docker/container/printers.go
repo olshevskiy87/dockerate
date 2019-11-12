@@ -82,8 +82,8 @@ func (l *List) fPrintContainer(w io.Writer, container types.Container) error {
 
 func (l *List) fPrintID(w io.Writer, id string) error {
 	var idOutput = id
-	if !l.OptNoTrunc {
-		idOutput = id[:IDMinWidth]
+	if !l.OptNoTrunc && len(idOutput) >= IDMinWidth {
+		idOutput = idOutput[:IDMinWidth]
 	}
 	var color = colorer.NoColor
 	if l.Colorized {
