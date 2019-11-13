@@ -46,10 +46,8 @@ func (l *List) fPrintContainer(w io.Writer, container types.Container) error {
 		return fmt.Errorf("could not display container's field \"ID\": %v", err)
 	}
 	if l.OptQuiet {
-		if _, err := w.Write([]byte("\n")); err != nil {
-			return err
-		}
-		return nil
+		_, err := w.Write([]byte("\n"))
+		return err
 	}
 	if err := l.fPrintImage(w, container.Image); err != nil {
 		return fmt.Errorf("could not display container's field \"image\": %v", err)
@@ -74,10 +72,8 @@ func (l *List) fPrintContainer(w io.Writer, container types.Container) error {
 			return fmt.Errorf("could not display container's field \"size\": %v", err)
 		}
 	}
-	if _, err := w.Write([]byte("\n")); err != nil {
-		return err
-	}
-	return nil
+	_, err := w.Write([]byte("\n"))
+	return err
 }
 
 func (l *List) fPrintID(w io.Writer, id string) error {
