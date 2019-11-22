@@ -10,6 +10,9 @@ ARCH = $(word 2, $(PLATFORM))
 BINNAME=dockerate-ps
 CMDPATH=cmd/dockerate-ps/*.go
 
+BUILD_HASH=$(shell git rev-parse --short HEAD)
+LD_FLAGS="-w -s -X main.buildHash=$(BUILD_HASH)"
+
 .PHONY: deps_lint deps lint build build_all clean
 .DEFAULT_GOAL := build
 
@@ -24,11 +27,11 @@ lint:
 
 build:
 	@echo building $(BINNAME)...
-	@$(GO) build -o $(BINPATH)/$(BINNAME) -ldflags="-w -s" $(CMDPATH)
+	@$(GO) build -o $(BINPATH)/$(BINNAME) -ldflags=$(LD_FLAGS) $(CMDPATH)
 
 $(PLATFORMS):
 	@echo building $(BINNAME) for $(OS)/$(ARCH)...
-	@GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -o $(BINPATH)/$(BINNAME)_$(OS)_$(ARCH) -ldflags="-w -s" $(CMDPATH)
+	@GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -o $(BINPATH)/$(BINNAME)_$(OS)_$(ARCH) -ldflags=$(LD_FLAGS) $(CMDPATH)
 
 build_all: $(PLATFORMS)
 

@@ -24,10 +24,17 @@ func (argsType) Description() string {
 	return "Dockerate (decorate docker commands output): List containers"
 }
 
-var version = "0.1.7"
+var (
+	version   = "0.1.7"
+	buildHash = ""
+)
 
 func (argsType) Version() string {
-	return fmt.Sprintf("dockerate-ps %s", version)
+	var buildHashOut = ""
+	if buildHash != "" {
+		buildHashOut = fmt.Sprintf(" (build %s)", buildHash)
+	}
+	return fmt.Sprintf("dockerate-ps %s%s", version, buildHashOut)
 }
 
 func isColorModeAvailable(mode string) bool {
