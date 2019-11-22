@@ -1,6 +1,6 @@
 # Dockerate
 
-[![Build Status](https://travis-ci.org/olshevskiy87/dockerate.svg?branch=master)](https://travis-ci.org/olshevskiy87/dockerate) [![MIT license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://lbesson.mit-license.org/) ![GitHub release](https://img.shields.io/github/v/tag/olshevskiy87/dockerate?label=release)
+[![Build Status](https://travis-ci.org/olshevskiy87/dockerate.svg?branch=master)](https://travis-ci.org/olshevskiy87/dockerate) [![MIT license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://lbesson.mit-license.org/) ![GitHub release](https://img.shields.io/github/v/tag/olshevskiy87/dockerate?label=release) [![Go Report Card](https://goreportcard.com/badge/github.com/olshevskiy87/dockerate)](https://goreportcard.com/report/github.com/olshevskiy87/dockerate)
 
 Decorate docker commands output.
 
