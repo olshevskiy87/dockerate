@@ -21,6 +21,8 @@ jobs:
 
     - name: Set up
       uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
       id: go
 
     - name: Check out code into the Go module directory
