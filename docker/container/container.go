@@ -3,6 +3,7 @@ package container
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/olshevskiy87/dockerate/docker"
@@ -18,11 +19,13 @@ const (
 )
 
 type List struct {
-	OptAll     bool
-	OptSize    bool
-	OptQuiet   bool
-	OptNoTrunc bool
-	Colorized  bool
+	OptAll       bool
+	OptSize      bool
+	OptQuiet     bool
+	OptNoTrunc   bool
+	OptNameLike  string
+	OptNameILike string
+	Colorized    bool
 }
 
 func NewList() *List {
@@ -43,6 +46,16 @@ func (l *List) SetOptionQuiet(quiet bool) {
 
 func (l *List) SetOptionNoTrunc(noTrunc bool) {
 	l.OptNoTrunc = noTrunc
+}
+
+func (l *List) SetOptionNameLike(name string) {
+	l.OptNameLike = name
+	l.OptNameILike = ""
+}
+
+func (l *List) SetOptionNameILike(name string) {
+	l.OptNameILike = name
+	l.OptNameLike = ""
 }
 
 func (l *List) SetColorize(colorized bool) {
@@ -68,7 +81,21 @@ func (l *List) CompileOutput(cli *docker.Client) (string, error) {
 		return "", fmt.Errorf("could not display header: %v", err)
 	}
 
+CONTAINERS_LOOP:
 	for _, container := range containers {
+		if l.OptNameLike != "" {
+			for _, name := range container.Names {
+				if !strings.Contains(name, l.OptNameLike) {
+					continue CONTAINERS_LOOP
+				}
+			}
+		} else if l.OptNameILike != "" {
+			for _, name := range container.Names {
+				if !strings.Contains(strings.ToLower(name), strings.ToLower(l.OptNameILike)) {
+					continue CONTAINERS_LOOP
+				}
+			}
+		}
 		err := l.fPrintContainer(w, container)
 		if err != nil {
 			return "", fmt.Errorf("could not display container: %v", err)

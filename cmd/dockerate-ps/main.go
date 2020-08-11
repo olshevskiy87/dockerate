@@ -16,6 +16,8 @@ type argsType struct {
 	Quiet     bool   `arg:"--quiet,-q" help:"only display containers IDs"`
 	Size      bool   `arg:"--size,-s" help:"display containers sizes"`
 	WhenColor string `arg:"--color" help:"when to use colors: always, auto, never" default:"auto"`
+	NameLike  string `arg:"--name-like" help:"container name pattern"`
+	NameILike string `arg:"--name-ilike" help:"container name pattern (case insensitive)"`
 	APIVer    string `arg:"env:DOCKER_API_VERSION" help:"docker server API version, env DOCKER_API_VERSION"`
 	Verbose   bool   `arg:"--verbose,-v" help:"output more information"`
 }
@@ -70,6 +72,10 @@ func main() {
 		fmt.Printf("unknown color mode: %s\n", args.WhenColor)
 		os.Exit(1)
 	}
+	if args.NameLike != "" && args.NameILike != "" {
+		fmt.Printf("options --name-like and --name-ilike could not be used simultaneously\n")
+		os.Exit(1)
+	}
 
 	cli, err := docker.NewClient(args.APIVer)
 	if err != nil {
@@ -89,6 +95,11 @@ func main() {
 	list.SetOptionSize(args.Size)
 	list.SetOptionQuiet(args.Quiet)
 	list.SetOptionNoTrunc(args.NoTrunc)
+	if args.NameLike != "" {
+		list.SetOptionNameLike(args.NameLike)
+	} else if args.NameILike != "" {
+		list.SetOptionNameILike(args.NameILike)
+	}
 	list.SetColorize(shouldBeColorized(args.WhenColor))
 
 	output, err := list.CompileOutput(cli)
