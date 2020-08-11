@@ -25,7 +25,7 @@ Here are two ways to install Dockerate on your system:
 Displays docker containers info like `docker ps`.
 
 ```
-Usage: dockerate-ps [--all] [--no-trunc] [--quiet] [--size] [--color COLOR] [--apiver APIVER] [--verbose]
+Usage: dockerate-ps [--all] [--no-trunc] [--quiet] [--size] [--color COLOR] [--name-like NAME-LIKE] [--name-ilike NAME-ILIKE] [--apiver APIVER] [--verbose]
 
 Options:
   --all, -a              show all containers
@@ -33,6 +33,10 @@ Options:
   --quiet, -q            only display containers IDs
   --size, -s             display containers sizes
   --color COLOR          when to use colors: always, auto, never [default: auto]
+  --name-like NAME-LIKE
+                         container name pattern
+  --name-ilike NAME-ILIKE
+                         container name pattern (case insensitive)
   --apiver APIVER        docker server API version, env DOCKER_API_VERSION
   --verbose, -v          output more information
   --help, -h             display this help and exit
