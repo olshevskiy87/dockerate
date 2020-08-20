@@ -25,11 +25,43 @@ type List struct {
 	OptNoTrunc   bool
 	OptNameLike  string
 	OptNameILike string
+	Columns      []string
 	Colorized    bool
+}
+
+const (
+	ContainerIDColumnName = "CONTAINER ID"
+	ImageColumnName       = "IMAGE"
+	CommandColumnName     = "COMMAND"
+	CreatedColumnName     = "CREATED"
+	StatusColumnName      = "STATUS"
+	PortsColumnName       = "PORTS"
+	NamesColumnName       = "NAMES"
+	SizeColumnName        = "SIZE"
+)
+
+var availableColumns = []string{
+	ContainerIDColumnName,
+	ImageColumnName,
+	CommandColumnName,
+	CreatedColumnName,
+	StatusColumnName,
+	PortsColumnName,
+	NamesColumnName,
+	SizeColumnName,
 }
 
 func NewList() *List {
 	return &List{}
+}
+
+func isColumnName(checkName string) bool {
+	for _, column := range availableColumns {
+		if column == checkName {
+			return true
+		}
+	}
+	return false
 }
 
 func (l *List) SetOptionAll(all bool) {
@@ -58,11 +90,48 @@ func (l *List) SetOptionNameILike(name string) {
 	l.OptNameLike = ""
 }
 
+func (l *List) SetColumns(columns []string) error {
+	l.Columns = make([]string, len(columns))
+	for i, column := range columns {
+		column := strings.ToUpper(strings.TrimSpace(column))
+		if !isColumnName(column) {
+			return fmt.Errorf("wrong column name: %s", column)
+		}
+		l.Columns[i] = column
+	}
+	return nil
+}
+
 func (l *List) SetColorize(colorized bool) {
 	l.Colorized = colorized
 }
 
+func (l *List) isColumnSet(checkName string) bool {
+	for _, column := range l.Columns {
+		if column == checkName {
+			return true
+		}
+	}
+	return false
+}
+
 func (l *List) CompileOutput(cli *docker.Client) (string, error) {
+	if len(l.Columns) == 0 {
+		columns := make([]string, 0, len(availableColumns))
+		for _, c := range availableColumns {
+			if !l.OptSize && c == SizeColumnName {
+				continue
+			}
+			columns = append(columns, c)
+		}
+		l.Columns = make([]string, len(columns))
+		copy(l.Columns, columns)
+	} else if l.OptSize && !l.isColumnSet(SizeColumnName) {
+		l.SetOptionSize(false)
+	} else if !l.OptSize && l.isColumnSet(SizeColumnName) {
+		return "", fmt.Errorf("header SIZE specified without option -s")
+	}
+
 	containers, err := cli.ContainerList(
 		types.ContainerListOptions{
 			All:  l.OptAll,

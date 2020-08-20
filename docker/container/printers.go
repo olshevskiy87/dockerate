@@ -25,9 +25,8 @@ func (l *List) fPrintHeader(w io.Writer) error {
 		return nil
 	}
 	var header strings.Builder
-	header.WriteString("CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES")
-	if l.OptSize {
-		header.WriteString("\tSIZE")
+	if len(l.Columns) != 0 {
+		header.WriteString(strings.Join(l.Columns, "\t"))
 	}
 	header.WriteString("\n")
 	var color = colorer.NoColor
@@ -42,34 +41,49 @@ func (l *List) fPrintHeader(w io.Writer) error {
 }
 
 func (l *List) fPrintContainer(w io.Writer, container types.Container) error {
-	if err := l.fPrintID(w, container.ID); err != nil {
-		return fmt.Errorf("could not display container's field \"ID\": %v", err)
-	}
 	if l.OptQuiet {
+		if err := l.fPrintID(w, container.ID); err != nil {
+			return fmt.Errorf("could not display container's field \"ID\": %v", err)
+		}
 		_, err := w.Write([]byte("\n"))
 		return err
 	}
-	if err := l.fPrintImage(w, container.Image); err != nil {
-		return fmt.Errorf("could not display container's field \"image\": %v", err)
-	}
-	if err := l.fPrintCommand(w, container.Command); err != nil {
-		return fmt.Errorf("could not display container's field \"command\": %v", err)
-	}
-	if err := l.fPrintCreated(w, container.Created); err != nil {
-		return fmt.Errorf("could not display container's field \"created\": %v", err)
-	}
-	if err := l.fPrintStatus(w, container.Status); err != nil {
-		return fmt.Errorf("could not display container's field \"status\": %v", err)
-	}
-	if err := l.fPrintPorts(w, container.Ports); err != nil {
-		return fmt.Errorf("could not display container's field \"ports\": %v", err)
-	}
-	if err := l.fPrintNames(w, container.Names); err != nil {
-		return fmt.Errorf("could not display container's field \"names\": %v", err)
-	}
-	if l.OptSize {
-		if err := l.fPrintSize(w, container.SizeRw, container.SizeRootFs); err != nil {
-			return fmt.Errorf("could not display container's field \"size\": %v", err)
+	for _, column := range l.Columns {
+		if column == ContainerIDColumnName && l.isColumnSet(ContainerIDColumnName) {
+			if err := l.fPrintID(w, container.ID); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", ContainerIDColumnName, err)
+			}
+		} else if column == ImageColumnName && l.isColumnSet(ImageColumnName) {
+			if err := l.fPrintImage(w, container.Image); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", ImageColumnName, err)
+			}
+		} else if column == CommandColumnName && l.isColumnSet(CommandColumnName) {
+			if err := l.fPrintCommand(w, container.Command); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", CommandColumnName, err)
+			}
+		} else if column == CreatedColumnName && l.isColumnSet(CreatedColumnName) {
+			if err := l.fPrintCreated(w, container.Created); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", CreatedColumnName, err)
+			}
+		} else if column == StatusColumnName && l.isColumnSet(StatusColumnName) {
+			if err := l.fPrintStatus(w, container.Status); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", StatusColumnName, err)
+			}
+		} else if column == PortsColumnName && l.isColumnSet(PortsColumnName) {
+			if err := l.fPrintPorts(w, container.Ports); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", PortsColumnName, err)
+			}
+		} else if column == NamesColumnName && l.isColumnSet(NamesColumnName) {
+			if err := l.fPrintNames(w, container.Names); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", NamesColumnName, err)
+			}
+		} else if column == SizeColumnName && l.isColumnSet(SizeColumnName) && l.OptSize {
+			if err := l.fPrintSize(w, container.SizeRw, container.SizeRootFs); err != nil {
+				return fmt.Errorf("could not display container's field \"%s\": %v", SizeColumnName, err)
+			}
+		}
+		if _, err := w.Write([]byte("\t")); err != nil {
+			return fmt.Errorf("could not display column delimiter (tab)")
 		}
 	}
 	_, err := w.Write([]byte("\n"))
@@ -112,10 +126,7 @@ func (l *List) fPrintImage(w io.Writer, image string) error {
 		}
 		outputImage.WriteString(colorer.Paintf(color, ":%s", imageTag))
 	}
-	_, err := w.Write([]byte(fmt.Sprintf(
-		"\t%s",
-		outputImage.String(),
-	)))
+	_, err := w.Write([]byte(outputImage.String()))
 	return err
 }
 
@@ -128,7 +139,7 @@ func (l *List) fPrintCommand(w io.Writer, command string) error {
 	if l.Colorized {
 		color = colorer.ColorDarkGray
 	}
-	_, err := w.Write([]byte(colorer.Paintf(color, "\t\"%s\"", commandOutput)))
+	_, err := w.Write([]byte(colorer.Paintf(color, "\"%s\"", commandOutput)))
 	return err
 }
 
@@ -145,9 +156,8 @@ func (l *List) fPrintCreated(w io.Writer, created int64) error {
 			createdColor = colorer.ColorLightGreen
 		}
 	}
-	_, err := w.Write([]byte(colorer.Paintf(
+	_, err := w.Write([]byte(colorer.Paint(
 		createdColor,
-		"\t%s",
 		humanize.Time(time.Unix(created, 0)),
 	)))
 	return err
@@ -162,7 +172,7 @@ func (l *List) fPrintStatus(w io.Writer, status string) error {
 			statusColor = colorer.ColorDefault
 		}
 	}
-	_, err := w.Write([]byte(colorer.Paintf(statusColor, "\t%s", status)))
+	_, err := w.Write([]byte(colorer.Paint(statusColor, status)))
 	return err
 }
 
@@ -180,10 +190,7 @@ func (l *List) fPrintPorts(w io.Writer, ports []types.Port) error {
 		portsOutput[i] = p.display
 	}
 
-	_, err := w.Write([]byte(fmt.Sprintf(
-		"\t%s",
-		strings.Join(portsOutput, ", "),
-	)))
+	_, err := w.Write([]byte(strings.Join(portsOutput, ", ")))
 	return err
 }
 
@@ -241,9 +248,8 @@ func (l *List) fPrintNames(w io.Writer, names []string) error {
 	if l.Colorized {
 		color = colorer.ColorDefault
 	}
-	_, err := w.Write([]byte(colorer.Paintf(
+	_, err := w.Write([]byte(colorer.Paint(
 		color,
-		"\t%s",
 		strings.Join(namesOutput, ", "),
 	)))
 	return err
@@ -259,7 +265,7 @@ func (l *List) fPrintSize(w io.Writer, sizeRw int64, sizeRootFs int64) error {
 		colorSizeRootFs = l.getSizeColor(sizeRw)
 	}
 	_, err := w.Write([]byte(fmt.Sprintf(
-		"\t%s (%s)",
+		"%s (%s)",
 		colorer.Paint(
 			colorSizeRw,
 			humanize.Bytes(uint64(sizeRw)),

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/olshevskiy87/dockerate/docker"
 	"github.com/olshevskiy87/dockerate/docker/container"
@@ -18,6 +19,7 @@ type argsType struct {
 	WhenColor string `arg:"--color" help:"when to use colors: always, auto, never" default:"auto"`
 	NameLike  string `arg:"--name-like" help:"container name pattern"`
 	NameILike string `arg:"--name-ilike" help:"container name pattern (case insensitive)"`
+	Columns   string `arg:"--columns" help:"columns names to display (case insensitive, separated by commas)"`
 	APIVer    string `arg:"env:DOCKER_API_VERSION" help:"docker server API version, env DOCKER_API_VERSION"`
 	Verbose   bool   `arg:"--verbose,-v" help:"output more information"`
 }
@@ -99,6 +101,13 @@ func main() {
 		list.SetOptionNameLike(args.NameLike)
 	} else if args.NameILike != "" {
 		list.SetOptionNameILike(args.NameILike)
+	}
+	if args.Columns != "" {
+		err = list.SetColumns(strings.Split(args.Columns, ","))
+		if err != nil {
+			fmt.Printf("could not set columns names: %v\n", err)
+			os.Exit(1)
+		}
 	}
 	list.SetColorize(shouldBeColorized(args.WhenColor))
 
