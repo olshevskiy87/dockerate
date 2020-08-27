@@ -4,21 +4,14 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/olshevskiy87/dockerate/colorer"
-	"github.com/olshevskiy87/dockerate/unit"
 
 	"github.com/docker/docker/api/types"
 	humanize "github.com/dustin/go-humanize"
 )
-
-type portsStrings struct {
-	display string
-	sort    string
-}
 
 func (l *List) fPrintHeader(w io.Writer) error {
 	if l.OptQuiet {
@@ -145,20 +138,8 @@ func (l *List) fPrintCommand(w io.Writer, command string) error {
 }
 
 func (l *List) fPrintCreated(w io.Writer, created int64) error {
-	var createdInterval = time.Now().Unix() - created
-	var createdColor = colorer.NoColor
-	if l.Colorized {
-		switch {
-		case createdInterval > unit.IntervalMonthSec:
-			createdColor = colorer.ColorRed
-		case createdInterval > unit.IntervalWeekSec:
-			createdColor = colorer.ColorYellow
-		default:
-			createdColor = colorer.ColorLightGreen
-		}
-	}
 	_, err := w.Write([]byte(colorer.Paint(
-		createdColor,
+		l.getCreatedColor(time.Now().Unix()-created),
 		humanize.Time(time.Unix(created, 0)),
 	)))
 	return err
@@ -167,7 +148,7 @@ func (l *List) fPrintCreated(w io.Writer, created int64) error {
 func (l *List) fPrintStatus(w io.Writer, status string) error {
 	var statusColor = colorer.NoColor
 	if l.Colorized {
-		if strings.HasPrefix(status, "Up") {
+		if strings.HasPrefix(status, StatusUpStr) {
 			statusColor = colorer.ColorLightGreen
 		} else {
 			statusColor = colorer.ColorDefault
@@ -193,51 +174,6 @@ func (l *List) fPrintPorts(w io.Writer, ports []types.Port) error {
 
 	_, err := w.Write([]byte(strings.Join(portsOutput, ", ")))
 	return err
-}
-
-func (l *List) makePortsItems(ports []types.Port) []portsStrings {
-	var items = make([]portsStrings, len(ports))
-	for i, portInfo := range ports {
-		var hostIPPublicPort strings.Builder
-
-		// IP
-		if portInfo.IP != "" {
-			hostIPPublicPort.WriteString(portInfo.IP)
-		}
-		// PublicPort
-		if portInfo.PublicPort != 0 {
-			if hostIPPublicPort.Len() > 0 {
-				hostIPPublicPort.WriteString(":")
-			}
-			hostIPPublicPort.WriteString(strconv.Itoa(int(portInfo.PublicPort)))
-		}
-
-		var portLine, portLineSort strings.Builder
-		if hostIPPublicPort.Len() > 0 {
-			var color = colorer.NoColor
-			if l.Colorized {
-				color = colorer.ColorLightCyan
-			}
-			var hostIPPublicPortStr = fmt.Sprintf(
-				"%s->",
-				hostIPPublicPort.String(),
-			)
-			portLine.WriteString(colorer.Paint(color, hostIPPublicPortStr))
-			portLineSort.WriteString(hostIPPublicPortStr)
-		}
-
-		// PrivatePort and Type (required)
-		var privatePortStr = fmt.Sprintf(
-			"%s/%s",
-			strconv.Itoa(int(portInfo.PrivatePort)),
-			portInfo.Type,
-		)
-		portLine.WriteString(privatePortStr)
-		portLineSort.WriteString(privatePortStr)
-
-		items[i] = portsStrings{display: portLine.String(), sort: portLineSort.String()}
-	}
-	return items
 }
 
 func (l *List) fPrintNames(w io.Writer, names []string) error {
@@ -278,13 +214,4 @@ func (l *List) fPrintSize(w io.Writer, sizeRw int64, sizeRootFs int64) error {
 		),
 	)))
 	return err
-}
-
-func (l *List) getSizeColor(size int64) colorer.ColorCode {
-	if size >= 0 && size < 500*unit.Megabyte {
-		return colorer.ColorDefault
-	} else if size >= 500*unit.Megabyte && size < unit.Gigabyte {
-		return colorer.ColorYellow
-	}
-	return colorer.ColorRed
 }

@@ -16,6 +16,8 @@ const (
 	IDMinWidth       = 12
 	ImageTagMinWidth = 12
 	CommandMinWidth  = 20
+
+	StatusUpStr = "Up"
 )
 
 type List struct {
