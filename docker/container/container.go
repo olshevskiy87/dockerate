@@ -93,12 +93,17 @@ func (l *List) SetOptionNameILike(name string) {
 }
 
 func (l *List) SetColumns(columns []string) error {
+	columnsMap := make(map[string]bool, len(columns))
 	l.Columns = make([]string, len(columns))
 	for i, column := range columns {
 		column := strings.ToUpper(strings.TrimSpace(column))
 		if !isColumnName(column) {
 			return fmt.Errorf("wrong column name: %s", column)
 		}
+		if _, ok := columnsMap[column]; ok {
+			return fmt.Errorf("column \"%s\" specified more than once", column)
+		}
+		columnsMap[column] = true
 		l.Columns[i] = column
 	}
 	return nil
