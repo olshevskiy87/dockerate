@@ -49,35 +49,36 @@ func (l *List) fPrintContainer(w io.Writer, container types.Container) error {
 		return err
 	}
 	for _, column := range l.Columns {
-		if column == ContainerIDColumnName && l.isColumnSet(ContainerIDColumnName) {
+		switch {
+		case column == ContainerIDColumnName && l.isColumnSet(ContainerIDColumnName):
 			if err := l.fPrintID(w, container.ID); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", ContainerIDColumnName, err)
 			}
-		} else if column == ImageColumnName && l.isColumnSet(ImageColumnName) {
+		case column == ImageColumnName && l.isColumnSet(ImageColumnName):
 			if err := l.fPrintImage(w, container.Image); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", ImageColumnName, err)
 			}
-		} else if column == CommandColumnName && l.isColumnSet(CommandColumnName) {
+		case column == CommandColumnName && l.isColumnSet(CommandColumnName):
 			if err := l.fPrintCommand(w, container.Command); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", CommandColumnName, err)
 			}
-		} else if column == CreatedColumnName && l.isColumnSet(CreatedColumnName) {
+		case column == CreatedColumnName && l.isColumnSet(CreatedColumnName):
 			if err := l.fPrintCreated(w, container.Created); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", CreatedColumnName, err)
 			}
-		} else if column == StatusColumnName && l.isColumnSet(StatusColumnName) {
+		case column == StatusColumnName && l.isColumnSet(StatusColumnName):
 			if err := l.fPrintStatus(w, container.Status); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", StatusColumnName, err)
 			}
-		} else if column == PortsColumnName && l.isColumnSet(PortsColumnName) {
+		case column == PortsColumnName && l.isColumnSet(PortsColumnName):
 			if err := l.fPrintPorts(w, container.Ports); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", PortsColumnName, err)
 			}
-		} else if column == NamesColumnName && l.isColumnSet(NamesColumnName) {
+		case column == NamesColumnName && l.isColumnSet(NamesColumnName):
 			if err := l.fPrintNames(w, container.Names); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", NamesColumnName, err)
 			}
-		} else if column == SizeColumnName && l.isColumnSet(SizeColumnName) && l.OptSize {
+		case column == SizeColumnName && l.isColumnSet(SizeColumnName) && l.OptSize:
 			if err := l.fPrintSize(w, container.SizeRw, container.SizeRootFs); err != nil {
 				return fmt.Errorf("could not display container's field \"%s\": %v", SizeColumnName, err)
 			}

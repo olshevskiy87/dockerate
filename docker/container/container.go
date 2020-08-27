@@ -115,8 +115,9 @@ func (l *List) isColumnSet(checkName string) bool {
 	return false
 }
 
-func (l *List) CompileOutput(cli *docker.Client) (string, error) {
-	if len(l.Columns) == 0 {
+func (l *List) precompileCheck() error {
+	switch {
+	case len(l.Columns) == 0:
 		columns := make([]string, 0, len(availableColumns))
 		for _, c := range availableColumns {
 			if !l.OptSize && c == SizeColumnName {
@@ -126,10 +127,18 @@ func (l *List) CompileOutput(cli *docker.Client) (string, error) {
 		}
 		l.Columns = make([]string, len(columns))
 		copy(l.Columns, columns)
-	} else if l.OptSize && !l.isColumnSet(SizeColumnName) {
+	case l.OptSize && !l.isColumnSet(SizeColumnName):
 		l.SetOptionSize(false)
-	} else if !l.OptSize && l.isColumnSet(SizeColumnName) {
-		return "", fmt.Errorf("header SIZE specified without option -s")
+	case !l.OptSize && l.isColumnSet(SizeColumnName):
+		return fmt.Errorf("header SIZE specified without option -s")
+	}
+	return nil
+}
+
+func (l *List) CompileOutput(cli *docker.Client) (string, error) {
+	err := l.precompileCheck()
+	if err != nil {
+		return "", err
 	}
 
 	containers, err := cli.ContainerList(
