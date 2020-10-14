@@ -21,6 +21,8 @@ const (
 )
 
 type List struct {
+	tabBuffer    *bytes.Buffer
+	writer       *tabwriter.Writer
 	OptAll       bool
 	OptSize      bool
 	OptQuiet     bool
@@ -54,7 +56,26 @@ var availableColumns = []string{
 }
 
 func NewList() *List {
-	return &List{}
+	list := &List{}
+	list.initWriter()
+	return list
+}
+
+func (l *List) initWriter() {
+	l.tabBuffer = &bytes.Buffer{}
+	l.writer = tabwriter.NewWriter(l.tabBuffer, 0, 0, docker.ColumnPadding, ' ', tabwriter.FilterHTML)
+}
+
+func (l *List) write(buf []byte) error {
+	_, err := l.writer.Write(buf)
+	return err
+}
+
+func (l *List) getBufferString(flush bool) string {
+	if flush {
+		l.writer.Flush()
+	}
+	return l.tabBuffer.String()
 }
 
 func isColumnName(checkName string) bool {
@@ -158,10 +179,7 @@ func (l *List) CompileOutput(cli *docker.Client) (string, error) {
 		return "", fmt.Errorf("could not get container list: %v", err)
 	}
 
-	tabBuffer := &bytes.Buffer{}
-	w := tabwriter.NewWriter(tabBuffer, 0, 0, docker.ColumnPadding, ' ', tabwriter.FilterHTML)
-
-	err = l.fPrintHeader(w)
+	err = l.fPrintHeader()
 	if err != nil {
 		return "", fmt.Errorf("could not display header: %v", err)
 	}
@@ -181,18 +199,16 @@ CONTAINERS_LOOP:
 				}
 			}
 		}
-		err := l.fPrintContainer(w, container)
+		err := l.fPrintContainer(container)
 		if err != nil {
 			return "", fmt.Errorf("could not display container: %v", err)
 		}
 	}
 
-	w.Flush()
-
 	loreley.DelimLeft = "<"
 	loreley.DelimRight = ">"
 
-	output, err := loreley.CompileAndExecuteToString(tabBuffer.String(), nil, nil)
+	output, err := loreley.CompileAndExecuteToString(l.getBufferString(true), nil, nil)
 	if err != nil {
 		return "", fmt.Errorf("could not compile result output string: %v", err)
 	}
