@@ -42,7 +42,7 @@ func (l *List) fPrintContainer(container types.Container) error {
 	for _, column := range l.Columns {
 		if l.isColumnSet(column) {
 			if err := l.fPrintColumn(container, column); err != nil {
-				return fmt.Errorf("could not display column \"%s\"", column)
+				return fmt.Errorf("could not display column \"%s\": %v", column, err)
 			}
 		}
 		if l.write([]byte("\t")) != nil {
@@ -52,42 +52,28 @@ func (l *List) fPrintContainer(container types.Container) error {
 	return l.write([]byte("\n"))
 }
 
-func (l *List) fPrintColumn(container types.Container, column string) error {
-	switch {
-	case column == ContainerIDColumnName:
-		if err := l.fPrintID(container.ID); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", ContainerIDColumnName, err)
-		}
-	case column == ImageColumnName:
-		if err := l.fPrintImage(container.Image); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", ImageColumnName, err)
-		}
-	case column == CommandColumnName:
-		if err := l.fPrintCommand(container.Command); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", CommandColumnName, err)
-		}
-	case column == CreatedColumnName:
-		if err := l.fPrintCreated(container.Created); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", CreatedColumnName, err)
-		}
-	case column == StatusColumnName:
-		if err := l.fPrintStatus(container.Status); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", StatusColumnName, err)
-		}
-	case column == PortsColumnName:
-		if err := l.fPrintPorts(container.Ports); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", PortsColumnName, err)
-		}
-	case column == NamesColumnName:
-		if err := l.fPrintNames(container.Names); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", NamesColumnName, err)
-		}
-	case column == SizeColumnName && l.OptSize:
-		if err := l.fPrintSize(container.SizeRw, container.SizeRootFs); err != nil {
-			return fmt.Errorf("could not display container's field \"%s\": %v", SizeColumnName, err)
+func (l *List) fPrintColumn(container types.Container, column string) (err error) {
+	switch column {
+	case ContainerIDColumnName:
+		err = l.fPrintID(container.ID)
+	case ImageColumnName:
+		err = l.fPrintImage(container.Image)
+	case CommandColumnName:
+		err = l.fPrintCommand(container.Command)
+	case CreatedColumnName:
+		err = l.fPrintCreated(container.Created)
+	case StatusColumnName:
+		err = l.fPrintStatus(container.Status)
+	case PortsColumnName:
+		err = l.fPrintPorts(container.Ports)
+	case NamesColumnName:
+		err = l.fPrintNames(container.Names)
+	case SizeColumnName:
+		if l.OptSize {
+			err = l.fPrintSize(container.SizeRw, container.SizeRootFs)
 		}
 	}
-	return nil
+	return
 }
 
 func (l *List) fPrintID(id string) error {
