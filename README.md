@@ -12,7 +12,7 @@ Here are two ways to install Dockerate on your system:
 
 * Compile from source code
 
-  - download and install [Go][8] (1.13+) if you haven't installed it yet
+  - download and install [Go][8] (1.16+) if you haven't installed it yet
   - get Dockerate sources: `go get github.com/olshevskiy87/dockerate`
   - move to sources folder: `cd $GOPATH/src/github.com/olshevskiy87/dockerate`
   - install all dependencies (including golangci-lint): `make deps`
