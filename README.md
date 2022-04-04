@@ -37,7 +37,8 @@ Options:
                          container name pattern
   --name-ilike NAME-ILIKE
                          container name pattern (case insensitive)
-  --columns COLUMNS      columns names to display (case insensitive, separated by commas)
+  --columns COLUMNS, -c COLUMNS
+                         columns names to display (case insensitive, separated by commas)
   --apiver APIVER        docker server API version, env DOCKER_API_VERSION
   --verbose, -v          output more information
   --help, -h             display this help and exit
