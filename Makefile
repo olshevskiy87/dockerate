@@ -2,7 +2,7 @@ GO = $(shell which go)
 GOBIN = $(shell $(GO) env GOPATH)/bin
 BINPATH = $(CURDIR)/bin
 
-PLATFORMS := darwin/386 darwin/amd64 linux/386 linux/amd64
+PLATFORMS := linux/386 linux/amd64
 PLATFORM = $(subst /, ,$@)
 OS = $(word 1, $(PLATFORM))
 ARCH = $(word 2, $(PLATFORM))
